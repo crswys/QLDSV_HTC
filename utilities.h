@@ -190,6 +190,40 @@ string icode ( size_t s )
     return result;
 }
 
+string icodeONumber ( size_t s ) // Code only Number and char '-'
+{
+    string result = "";
+    while( true )
+    {
+        char _char = _getch();
+        int num = (int)_char;
+        if (_char == '\r')
+        {
+            cout << endl;
+            break;
+        }
+        else if (_char == '\b')
+        {
+            if ( !result.empty() )
+            {    
+                cout << "\b \b";
+                result.pop_back();
+            }
+        }
+        else if ( ( result.size() < s ) && ( ( 48 <= num && num <= 57 )) )
+        {
+            cout << _char;
+            result += _char;
+        }
+        else if (num == 45 || num == 95)
+        {
+            cout << _char;
+            result += _char;
+        }
+    }
+    return result;
+}
+
 void upCharFirst (string &str)
 {
     int len = str.size();
