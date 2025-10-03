@@ -1,4 +1,5 @@
 #include <iostream>
+#include "crs.h"
 using namespace std;
 const int MAX_LOPSV = 10000;
 
@@ -71,8 +72,8 @@ int tim_lop_theo_malop(const DS_LOPSV &dslopsv, const string &malop){
 }
 
 bool tim_sv_theo_maso(const DS_LOPSV &dslopsv, string malop, const string maso){
-    if(dslopsv.n == 0 || maso.empty())return false;
-    int index = -1;    
+    if(dslopsv.n < stoi(malop)) return false;
+    int index = -1;
     for(int i = 0; i < dslopsv.n; i++){ if(dslopsv.nodes[i]->MALOP == malop){index = i; break;} }
     if(index == -1) return false;
 
@@ -85,48 +86,41 @@ bool tim_sv_theo_maso(const DS_LOPSV &dslopsv, string malop, const string maso){
 }
 
 void nhap_lop_va_sinhvien(DS_LOPSV &dslopsv){
-    cout << "Nhap ma lop: ";
-    string malop; getline(cin,malop);
-    while(malop.empty() || tim_lop_theo_malop(dslopsv,malop) != -1){
-        if(malop.empty()) cout <<"Ban chua nhap ma lop! Nhap lai: ";
-        else cout <<"Ma lop da ton tai! Nhap lai: ";
-        getline(cin,malop);
-    }
     cout << "Nhap ten lop: "; string tenlop; getline(cin,tenlop);
-    while(tenlop.empty()){cout << "Ban chua nhap ten lop! Nhap lai: "; getline(cin,tenlop);}
+    while(!ten_lop_check(tenlop)) getline(cin,tenlop);
     dslopsv.nodes[dslopsv.n] = new LopSV();
+    dslopsv.nodes[dslopsv.n]->MALOP = to_string(dslopsv.n);
     dslopsv.nodes[dslopsv.n]->TENLOP = tenlop;
-    dslopsv.nodes[dslopsv.n]->MALOP = malop;
     dslopsv.nodes[dslopsv.n]->FirstSV = nullptr;
     dslopsv.n++;
     while(true){
-        string masv; cout <<"Nhap ma sinh vien(skip de out): "; getline(cin,masv);
-        if(masv.empty()) break;
+        string masv; cout <<"Nhap ma sinh vien (skip de out): "; getline(cin,masv);
+        if(!maso_check(masv)) break; 
         
         while(tim_sv_theo_maso(dslopsv,dslopsv.nodes[dslopsv.n-1]->MALOP,masv)){
             cout <<"Ma sinh vien da ton tai! Nhap lai(skip de out): ";getline(cin, masv); 
             if(masv.empty()) break;
         } //kiểm tra mã sinh viên có bị trùng trong lớp không
 
+        PTRSV node = new nodeSV();
+        node->next = nullptr;
+
+        node->sv.MASV = masv;
         string hosv; cout <<"Nhap ho sinh vien: "; getline(cin,hosv);
-        while(hosv.empty()){ cout <<"Ban chua nhap ho sinh vien! Nhap lai: "; getline(cin, hosv);}
+        while(!text_format(hosv)) getline(cin, hosv);
+        node->sv.HO = hosv;
         string tensv; cout <<"Nhap ten sinh vien: "; getline(cin,tensv);
-        while(tensv.empty()){ cout <<"Ban chua nhap ten sinh vien! Nhap lai: "; getline(cin, tensv);}
+        while(!text_format(tensv)) getline(cin, tensv);
+        node->sv.TEN = tensv;
         string phaisv; cout <<"Nhap phai sinh vien: "; getline(cin,phaisv);
+        node->sv.PHAI = phaisv;
         while(phaisv.empty()){ cout <<"Ban chua nhap phai sinh vien! Nhap lai: "; getline(cin, phaisv);}
         string sodtsv; cout <<"Nhap so dien thoai sinh vien: "; getline(cin,sodtsv);
-        while(sodtsv.empty()){ cout <<"Ban chua nhap so dien thoai sinh vien! Nhap lai: "; getline(cin, sodtsv);}
+        while(!num_check(sodtsv)) getline(cin, sodtsv);
+        node->sv.SODT = sodtsv;
         string emailsv; cout <<"Nhap email sinh vien: "; getline(cin,emailsv);
         while(emailsv.empty()){ cout <<"Ban chua nhap email sinh vien! Nhap lai: "; getline(cin, emailsv);} 
-        
-        PTRSV node = new nodeSV();
-        node->sv.MASV = masv; 
-        node->sv.HO = hosv;
-        node->sv.TEN = tensv;
-        node->sv.PHAI = phaisv;
-        node->sv.SODT = sodtsv;
-        node->sv.Email = emailsv;
-        node->next = nullptr;
+        node->sv.Email = emailsv;   
         
         LopSV* lop = dslopsv.nodes[dslopsv.n-1]; //da sua
         if(lop->FirstSV == nullptr){
@@ -180,7 +174,7 @@ void xoa_sv(DS_LOPSV& dslopsv){
 
 void hieu_chinh_thong_tin_sinhvien(DS_LOPSV &dslopsv){
     cout << "Nhap ma lop(skip de out): "; string malop; getline(cin,malop);
-    if(malop.empty()) return;
+    if(!maso_check(malop)) return;
     int i = tim_lop_theo_malop(dslopsv,malop);
     while(i == -1 || dslopsv.nodes[i]->FirstSV == nullptr){
         if(i == -1) cout << "Khong tim thay ma lop! Nhap lai(skip de out): ";
@@ -216,12 +210,12 @@ void hieu_chinh_thong_tin_sinhvien(DS_LOPSV &dslopsv){
         }    
         else if(option == "Ho"){
             string hosv; cout <<"Ho cu cua sinh vien : "<< p->sv.HO <<"\nNhap ho sinh vien moi: "; getline(cin,hosv);
-            while(hosv.empty()){ cout <<"Ban chua nhap ho sinh vien moi! Nhap lai: "; getline(cin, hosv);}
+            while(!text_format(hosv)) getline(cin, hosv);
             p->sv.HO = hosv;
         }
         else if(option == "Ten"){
             string tensv; cout <<"Ten cu cua sinh vien: "<<p->sv.TEN<<"\nNhap ten sinh vien: "; getline(cin,tensv);
-            while(tensv.empty()){ cout <<"Ban chua nhap ten sinh vien moi! Nhap lai: "; getline(cin, tensv);}
+            while(!text_format(tensv)) getline(cin, tensv);
             p->sv.TEN = tensv;
         }    
         else if(option == "Phai"){
@@ -230,7 +224,7 @@ void hieu_chinh_thong_tin_sinhvien(DS_LOPSV &dslopsv){
             p->sv.PHAI = phaisv;
         }else if(option == "SDT"){
             string sodtsv; cout <<"So dien thoai cu cua sinh vien: "<<p->sv.SODT<<"\nNhap so dien thoai sinh vien: "; getline(cin,sodtsv);
-            while(sodtsv.empty()){ cout <<"Ban chua nhap so dien thoai sinh vien moi! Nhap lai: "; getline(cin, sodtsv);}
+            while(!num_check(sodtsv)) getline(cin, sodtsv);
             p->sv.SODT = sodtsv;
         }else if(option == "Email"){
             string emailsv; cout <<"Email cu cua sinh vien: "<< p->sv.Email<<"\nNhap email sinh vien: "; getline(cin,emailsv);
@@ -242,27 +236,27 @@ void hieu_chinh_thong_tin_sinhvien(DS_LOPSV &dslopsv){
             
             while(tim_sv_theo_maso(dslopsv,lop->MALOP,masv)){
                 cout <<"Ma sinh vien da ton tai! Nhap lai(skip de out): ";getline(cin, masv); 
-                if(masv.empty()) return;
+                if(!maso_check(masv)) return;
             } 
             p->sv.MASV = masv;
 
             string hosv; cout <<"Ho cu cua sinh vien : "<< p->sv.HO <<"\nNhap ho sinh vien moi: "; getline(cin,hosv);
-            while(hosv.empty()){ cout <<"Ban chua nhap ho sinh vien moi! Nhap lai: "; getline(cin, hosv);}
+            while(!text_format(hosv)) getline(cin, hosv);
             p->sv.HO = hosv;
             string tensv; cout <<"Ten cu cua sinh vien: "<<p->sv.TEN<<"\nNhap ten sinh vien: "; getline(cin,tensv);
-            while(tensv.empty()){ cout <<"Ban chua nhap ten sinh vien moi! Nhap lai: "; getline(cin, tensv);}
-            p->sv.TEN = tensv;
+            while(!text_format(tensv)) getline(cin, tensv);
+            p->sv.TEN = text_format(tensv);
             string phaisv; cout <<"Phai cu cua sinh vien: " << p->sv.PHAI <<"\nNhap phai sinh vien: "; getline(cin,phaisv);
             while(phaisv.empty()){ cout <<"Ban chua nhap phai sinh vien moi! Nhap lai: "; getline(cin, phaisv);}
             p->sv.PHAI = phaisv;
             string sodtsv; cout <<"So dien thoai cu cua sinh vien: "<<p->sv.SODT<<"\nNhap so dien thoai sinh vien: "; getline(cin,sodtsv);
-            while(sodtsv.empty()){ cout <<"Ban chua nhap so dien thoai sinh vien moi! Nhap lai: "; getline(cin, sodtsv);}
+            while(!num_check(sodtsv)) getline(cin, sodtsv);
             p->sv.SODT = sodtsv;
             string emailsv; cout <<"Email cu cua sinh vien: "<< p->sv.Email<<"\nNhap email sinh vien: "; getline(cin,emailsv);
             while(emailsv.empty()){ cout <<"Ban chua nhap email sinh vien moi! Nhap lai: "; getline(cin, emailsv);} 
             p->sv.Email = emailsv;
         }else if(option == "*") return;
-        cout <<"Da hieu chinh thong tin cua sinh vien co ma so" << p->sv.MASV <<"thanh cong" <<endl;
+        cout <<"Da hieu chinh thong tin cua sinh vien co ma so " << p->sv.MASV <<" thanh cong" <<endl;
     }
 }
 
@@ -271,6 +265,6 @@ int main(){
     treeMH dsmh=NULL;
     DS_LOPSV dslopsv;
     nhap_lop_va_sinhvien(dslopsv);
-    xoa_sv(dslopsv);
+    //xoa_sv(dslopsv);
     hieu_chinh_thong_tin_sinhvien(dslopsv);
 }
