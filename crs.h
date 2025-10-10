@@ -41,8 +41,12 @@ bool num_check(string &num){
         cout << "So khong hop le (loi ki tu)! Nhap lai: ";
         return false;}
     }
-    if(result.length() != 10){
+    if(result.length() < 10){
         cout << "So khong hop le (khong du 10 chu so)! Nhap lai: ";
+        return false;
+    }
+    if(result.length() > 10){
+        cout << "So khong hop le (khong duoc qua 10 chu so)! Nhap lai: ";
         return false;
     }
     if(result[0] != '0'){
@@ -76,4 +80,21 @@ bool ten_lop_check(string &tenlop){
         cout << "Tu dong sua: ( " << tenlop << " )\n";
     }
     return true;
+}
+
+int int_check(const string str){
+    if(!empty_check(str)) return -1;
+    for(char c : str){
+        if(!isdigit(c)) return -1;
+    }
+
+    return stoi(str);
+}
+
+float float_check(const string str){
+    if(!empty_check(str)) return -1;
+    for(char c : str){
+        if(!isdigit(c)) return -1;
+    }
+    return stof(str);
 }
