@@ -15,6 +15,7 @@ bool text_format(string &str){
     string result;
     bool newWord = true;
     for(char c : str){
+        if(!isalpha(c) && !isblank(c)){cout << "Loi khong duoc nhap ki tu dac biet! Nhap lai: "; return false;}
         if(isalpha(c)) {
             result += newWord ? toupper(c) : tolower(c);
             newWord = false;
@@ -25,27 +26,26 @@ bool text_format(string &str){
             }
         }
     }
-    if(str != result){ 
-        cout << "Tu dong sua: ( " << result << " )\n";
-        str = result;
-    }
+    str = result;
+    cout << "Tu dong sua: ( "<< result <<" )\n";
     return true;
 }
 
 bool num_check(string &num){
-     if(!empty_check(num)) return false;
+    if(!empty_check(num)) return false;
     string result;
     for(char c : num){
         if(isdigit(c)) result += c;
         else if(!isblank(c)){
-        cout << "So khong hop le (loi ki tu)! Nhap lai: ";
-        return false;}
+            cout << "So khong hop le (loi ki tu)! Nhap lai: ";
+            return false;
+        }
     }
-    if(result.length() < 10){
+    if(num.length() < 10){
         cout << "So khong hop le (khong du 10 chu so)! Nhap lai: ";
         return false;
     }
-    if(result.length() > 10){
+    if(num.length() > 10){
         cout << "So khong hop le (khong duoc qua 10 chu so)! Nhap lai: ";
         return false;
     }
@@ -53,10 +53,7 @@ bool num_check(string &num){
         cout << "So khong hop le (can bat dau la chu so 0)! Nhap lai: ";
         return false;
     }
-    if(num != result){
-        cout << "Tu dong sua: ( " << result << " )\n"; 
-        num = result;
-    }
+    num = result;
     return true;
 }
 
@@ -64,25 +61,12 @@ bool maso_check(string &maso){
     if(maso.empty()) return false;
     string result;
     for(char c: maso){
-        if(isdigit(c)) result += c;
-    }
-    if(maso != result){
-        cout << "Tu dong sua: ( " << result << " )\n";
-        maso = result;
+        if(!isdigit(c)) {cout <<"Ma so sinh vien khong hop le (loi ki tu)! Nhap lai: "; return false;}
     }
     return true;
 }
 
-bool ten_lop_check(string &tenlop){
-    if(!empty_check(tenlop)) return false;
-    if(!isupper(tenlop[0])){
-        tenlop[0] = toupper(tenlop[0]);
-        cout << "Tu dong sua: ( " << tenlop << " )\n";
-    }
-    return true;
-}
-
-int int_check(const string str){
+int int_check(const string &str){
     if(!empty_check(str)) return -1;
     for(char c : str){
         if(!isdigit(c)) return -1;
@@ -91,7 +75,7 @@ int int_check(const string str){
     return stoi(str);
 }
 
-float float_check(const string str){
+float float_check(const string &str){
     if(!empty_check(str)) return -1;
     for(char c : str){
         if(!isdigit(c)) return -1;

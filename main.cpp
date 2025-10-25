@@ -78,7 +78,7 @@ bool tim_sv_theo_maso_va_lop(const DS_LOPSV &dslopsv, string malop, const string
     if(index == -1) return false;
 
     PTRSV p = dslopsv.nodes[index]->FirstSV;
-    while(p){
+    while(p && p->sv.MASV <= maso){
         if(p->sv.MASV == maso) return true;
         p = p->next;
     }
@@ -87,7 +87,7 @@ bool tim_sv_theo_maso_va_lop(const DS_LOPSV &dslopsv, string malop, const string
 
 void nhap_lop_va_sinhvien(DS_LOPSV &dslopsv){
     cout << "Nhap ten lop: "; string tenlop; getline(cin,tenlop);
-    while(!ten_lop_check(tenlop)) getline(cin,tenlop);
+    while(!text_format(tenlop)) getline(cin,tenlop);
     dslopsv.nodes[dslopsv.n] = new LopSV();
     dslopsv.nodes[dslopsv.n]->MALOP = to_string(dslopsv.n);
     dslopsv.nodes[dslopsv.n]->TENLOP = tenlop;
@@ -95,7 +95,8 @@ void nhap_lop_va_sinhvien(DS_LOPSV &dslopsv){
     dslopsv.n++;
     while(true){
         string masv; cout <<"Nhap ma sinh vien (skip de out): "; getline(cin,masv);
-        if(!maso_check(masv)) break; 
+        if(masv.empty()) break;
+        while(!maso_check(masv)) getline(cin,masv); 
         
         while(tim_sv_theo_maso_va_lop(dslopsv,dslopsv.nodes[dslopsv.n-1]->MALOP,masv)){
             cout <<"Ma sinh vien da ton tai! Nhap lai(skip de out): ";getline(cin, masv); 
@@ -123,11 +124,20 @@ void nhap_lop_va_sinhvien(DS_LOPSV &dslopsv){
         node->sv.Email = emailsv;   
         
         LopSV* lop = dslopsv.nodes[dslopsv.n-1]; //da sua
-        if(lop->FirstSV == nullptr){
-            lop->FirstSV = lop->LastSV = node;
-        } else{
-            lop->LastSV->next = node;
+        PTRSV p = lop->FirstSV,prev = nullptr;
+        while(p&&stoi(p->sv.MASV)<stoi(node->sv.MASV)){
+            prev=p;
+            p=p->next;
+        }if(!prev){ //chen dau
+            node->next = lop->FirstSV;
+            lop->FirstSV = node;
+            if(!lop->LastSV) lop->LastSV = node;
+        } else if(!p){ //chen cuoi
+            prev->next = node;
             lop->LastSV = node;
+        }else{ //chen giua
+            prev->next = node;
+            node->next = p;
         }
 }
 }
@@ -136,7 +146,7 @@ void xoa_sv(DS_LOPSV& dslopsv){
     cout << "Nhap ma lop(skip de out): "; string malop; getline(cin,malop);
     if(malop.empty()) return;
     int i = tim_lop_theo_malop(dslopsv,malop);
-    while(i == -1 || dslopsv.nodes[i]->FirstSV == nullptr){
+    while(i == -1 || !dslopsv.nodes[i]->FirstSV){
         if(i == -1) cout << "Khong tim thay ma lop! Nhap lai(skip de out): ";
         else cout << "Lop khong co hoc sinh de xoa! Nhap lai(skip de out): ";
         getline(cin, malop);
@@ -159,13 +169,13 @@ void xoa_sv(DS_LOPSV& dslopsv){
     
     if(p->sv.MASV == masv){ //xóa node đầu
         lop->FirstSV = p->next;
-        if(lop->FirstSV == nullptr) lop->LastSV = nullptr; //cập nhật lastSV (trường hợp sau khi xóa thì lớp rỗng)
+        if(!lop->FirstSV) lop->LastSV = nullptr; //cập nhật lastSV (trường hợp sau khi xóa thì lớp rỗng)
         delete p;
     } else{
-    while (p->next != nullptr && p->next->sv.MASV != masv) p = p->next;
+    while (p->next && p->next->sv.MASV != masv) p = p->next;
     PTRSV temp = p->next;
     p->next = temp->next;
-    if(p->next == nullptr) lop->LastSV = p; //cập nhật last (nếu xóa hs ở cuối )
+    if(!p->next) lop->LastSV = p; //cập nhật last (nếu xóa hs ở cuối )
     delete temp;
     }
     cout << "Da xoa sinh vien "<< masv << " khoi lop " << malop <<endl;
@@ -176,7 +186,7 @@ void hieu_chinh_thong_tin_sinhvien(DS_LOPSV &dslopsv){
     cout << "Nhap ma lop(skip de out): "; string malop; getline(cin,malop);
     if(!maso_check(malop)) return;
     int i = tim_lop_theo_malop(dslopsv,malop);
-    while(i == -1 || dslopsv.nodes[i]->FirstSV == nullptr){
+    while(i == -1 || !dslopsv.nodes[i]->FirstSV){
         if(i == -1) cout << "Khong tim thay ma lop! Nhap lai(skip de out): ";
         else cout << "Lop khong co hoc sinh de chinh sua! Nhap lai(skip de out): ";
         getline(cin, malop);
@@ -195,7 +205,7 @@ void hieu_chinh_thong_tin_sinhvien(DS_LOPSV &dslopsv){
         if(masv.empty()) return;
     }
     PTRSV p = lop->FirstSV;
-    while( p != nullptr && p->sv.MASV != masv) p = p->next;
+    while(p && p->sv.MASV != masv) p = p->next;
     string option;
     cout << "Nhap thong tin muon hieu chinh (Ma/Ho/Ten/Phai/SDT/Email/All/* de out): " ;getline(cin,option);
         if(option == "Ma"){
@@ -261,7 +271,7 @@ void hieu_chinh_thong_tin_sinhvien(DS_LOPSV &dslopsv){
 }
 
 void in_ds_mh_tang_dan(const nodeMH* dsmh){
-    if(dsmh == nullptr){
+    if(!dsmh){
         cout << "Danh sach mon hoc rong!";
         return;
     }
@@ -280,7 +290,7 @@ nodeLopTinChi* tim_lop_tin_chi(nodeLopTinChi* ltc ,string nienkhoa, int hocky, i
     while(ltc){
         if(ltc->ltc.NienKhoa == nienkhoa && ltc->ltc.Hocky == hocky && ltc->ltc.Nhom == nhom && ltc->ltc.MAMH == monhoc){
             if(ltc->ltc.huylop != false){ cout << "Lop tin chi da bi huy!\n"; return nullptr; }
-            if(ltc->ltc.dssvdk == nullptr){ cout <<"Lop chua co sinh vien dang ky!\n"; return nullptr; }
+            if(!ltc->ltc.dssvdk){ cout <<"Lop chua co sinh vien dang ky!\n"; return nullptr; }
             return ltc;
         }
         ltc = ltc->next;
@@ -292,7 +302,7 @@ nodeLopTinChi* tim_lop_tin_chi(nodeLopTinChi* ltc ,string nienkhoa, int hocky, i
 SinhVien tim_sinh_vien_chi_voi_maso(const DS_LOPSV &dslopsv,const string masv){
     for(int i = 0; i < dslopsv.n; i++){
         PTRSV p = dslopsv.nodes[i]->FirstSV;
-        while(p){
+        while(p && p->sv.MASV <= masv){
             if(p->sv.MASV == masv) return p->sv;
             p = p->next;
         }   
@@ -325,9 +335,8 @@ void in_diem_sv(DS_LOPSV &dslopsv, nodeLopTinChi* ltc,string nienkhoa, int hocky
 
 PTRDK tim_sinh_vien_theo_maso_voi_lop_tinh_chi(const nodeLopTinChi* ltc, const string maso){
     PTRDK dssv = ltc->ltc.dssvdk; 
-    while(dssv){
-        if(dssv->dk.MASV == maso)  
-        return dssv;
+    while(dssv&& dssv->dk.MASV <= maso){
+        if(dssv->dk.MASV == maso) return dssv;
         dssv = dssv->next;
         }
     return nullptr;
@@ -354,7 +363,7 @@ void in_hieu_chinh_diem_sv(DS_LOPSV &dslopsv,nodeLopTinChi* ltc){
         cout << "Nhap ma so sinh vien muon hieu chinh diem (skip de xem bang): "; string masv; getline(cin,masv);
         if(!maso_check(masv)) break;
         PTRDK dssv = tim_sinh_vien_theo_maso_voi_lop_tinh_chi(ltc,masv);
-        while(dssv == nullptr ){cout << "Khong tim thay sinh vien! Nhap lai: "; getline(cin,masv);dssv = tim_sinh_vien_theo_maso_voi_lop_tinh_chi(ltc,masv);}
+        while(!dssv){cout << "Khong tim thay sinh vien! Nhap lai: "; getline(cin,masv);dssv = tim_sinh_vien_theo_maso_voi_lop_tinh_chi(ltc,masv);}
         cout << "Nhap diem muon hieu chinh cho sinh vien co ma so "<<masv<< " :"; string diems; getline(cin,diems);
         while(float_check(diems)==-1){cout <<"Chi duoc nhap diem la chu so! Nhap lai: "; getline(cin,diems);}
         float diem = float_check(diems);
@@ -363,13 +372,14 @@ void in_hieu_chinh_diem_sv(DS_LOPSV &dslopsv,nodeLopTinChi* ltc){
     in_diem_sv(dslopsv, ltc, nienkhoa, hocky, nhom, monhoc);
 }
 
+
 int main(){
     PTRLTC dsltc=NULL;
     treeMH dsmh=NULL;
     DS_LOPSV dslopsv;
     nodeLopTinChi* ltc = nullptr;
-    //nhap_lop_va_sinhvien(dslopsv);
+    nhap_lop_va_sinhvien(dslopsv);
     //xoa_sv(dslopsv);
     //hieu_chinh_thong_tin_sinhvien(dslopsv);
-    in_hieu_chinh_diem_sv(dslopsv, ltc);
+    //in_hieu_chinh_diem_sv(dslopsv, ltc);
 }
