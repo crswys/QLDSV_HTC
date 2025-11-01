@@ -1,19 +1,23 @@
 #include <iostream>
+#include <fstream>
+#include <filesystem>
+#include <functional>
 #include "crs.h"
 using namespace std;
 const int MAX_LOPSV = 10000;
 
-struct MonHoc {
+// MAMH | TENMH | STCLT | STCTH
+struct MonHoc { // thong tin mon hoc
     string MAMH; string TENMH; 
     int STCLT ,STCTH; int height;
 };
 
-struct nodeMH {
-    MonHoc mh;
+struct nodeMH { // node cua mon hoc
+    MonHoc mh;                          
     nodeMH *left, *right;
 };
 
-typedef nodeMH* treeMH;
+typedef nodeMH* treeMH; // node mon hoc
 
 struct SinhVien {
     string MASV, HO, TEN;
@@ -47,9 +51,9 @@ struct nodeDK {
     DangKy dk;
     nodeDK *next;
 };// danh sách sinh viên
-typedef nodeDK* PTRDK;
+typedef nodeDK* PTRDK; // MASV | HO | TEN | PHAI | SODT | EMAIL
 
-struct LopTinChi {
+struct LopTinChi { // MALOPTC | MAMH | NienKhoa | Hocky | Nhom | sosvmin | sosvmax 
     int MALOPTC ;
     string MAMH;
     string NienKhoa;  
@@ -57,18 +61,110 @@ struct LopTinChi {
     bool huylop = false;
     PTRDK dssvdk=NULL; 
  }; //lớp tính chỉ
- 
+
 struct nodeLopTinChi {
     LopTinChi ltc;
     nodeLopTinChi *next;
 }; //danh sách lớp tính chỉ
 
-typedef nodeDK* PTRLTC; 
+typedef nodeLopTinChi* PTRLTC; 
+
+//------------------------------- search mon hoc--------------------------------------------
+bool search_theo_ten_mon_hoc_BST(treeMH dsmh,string TENMH){
+    if(!dsmh) return false;
+    if(dsmh->mh.TENMH == TENMH) return true;
+    if(TENMH < dsmh->mh.TENMH) return search_theo_ten_mon_hoc_BST(dsmh->left, TENMH);
+    else return search_theo_ten_mon_hoc_BST(dsmh->right,TENMH);
+}
+
+bool search_theo_ma_mon_hoc_BST(treeMH dsmh, string maMonHoc){
+    if(!dsmh) return false;
+    if(maMonHoc == dsmh->mh.MAMH) return true;
+    if(maMonHoc < dsmh->mh.MAMH)
+        return search_theo_ma_mon_hoc_BST(dsmh->left, maMonHoc);
+    else
+        return search_theo_ma_mon_hoc_BST(dsmh->right, maMonHoc);
+}
 
 int tim_lop_theo_malop(const DS_LOPSV &dslopsv, const string &malop){
     for(int i = 0; i < dslopsv.n; i++)
         if(dslopsv.nodes[i]->MALOP == malop) return i;
     return -1;
+}
+//-------------------------------------------------------------------------------------------
+
+void createFolder(const string& folder){
+    if(!filesystem::exists(folder))
+        filesystem::create_directory(folder);
+}
+
+void save_file_Mon_hoc(const treeMH &dsmh){
+    if(!dsmh) return;
+    string folder = "data";
+    createFolder(folder);
+    ofstream fout(folder + "/monhoc.txt", ios::app);
+    if(!fout){ cerr << "Khong the mo file!\n"; return;}
+    function<void(treeMH)> dfs = [&](treeMH t){
+        if(!t) return;
+        fout << t->mh.MAMH << "|" << t->mh.TENMH << "|" << t->mh.STCLT << "|" << t->mh.STCTH << "\n";
+        dfs(t->left);
+        dfs(t->right);
+    };
+    dfs(dsmh);
+    fout.close();
+    cout <<"Da luu mon hoc toi" << folder << "/monhoc.txt\n";
+}
+
+void save_file_lop_tc(PTRLTC dsltc){
+    if(!dsltc) return;
+    string folder = "data";
+    createFolder(folder);
+    ofstream fout(folder + "/dsltc.txt",ios::app);
+    if(!fout){ cout << "Khong the mo file!\n";return;}
+    while(dsltc){
+        LopTinChi t = dsltc->ltc;
+        fout << t.MALOPTC << "|" << t.MAMH << "|" << t.NienKhoa << "|" << t.Hocky << "|" << t.Nhom << "|" << t.sosvmin <<"|" <<t.sosvmax << "\n";
+        dsltc = dsltc->next;
+    }
+    fout.close();
+}
+
+void save_sinh_vien_theo_ltc(DS_LOPSV dslopsv,PTRLTC dsloptc){
+    if(!dsloptc) return;
+    string folder = "data/dsloptc";
+    createFolder(folder);
+    while (dsloptc)
+    {
+        string lop = to_string(dsloptc->ltc.MALOPTC) + "_" + dsloptc->ltc.NienKhoa + ".txt";
+        ofstream fout(folder + "/" + lop,ios::app);
+        if(!fout) {cout << "Khong the mo file " << lop << "\n"; dsloptc = dsloptc->next; continue;}
+        PTRDK dssvdk = dsloptc->ltc.dssvdk;
+        while(dssvdk){
+            SinhVien sv = tim_sinh_vien_chi_voi_maso(dslopsv,dssvdk->dk.MASV);
+            fout << sv.MASV << "|" << sv.HO << "|" << sv.TEN << "|" << sv.PHAI << "|" << sv.SODT << "|" << sv.Email <<"\n";
+            dssvdk = dssvdk->next;  
+        }
+        fout.close();
+        dsloptc = dsloptc->next;
+    }
+}
+
+void save_sinh_vien_theo_lop(DS_LOPSV dslopsv){
+    if(dslopsv.n == 0) return;
+    string folder = "data/dslop";
+    createFolder(folder);
+    for(int i=0;i<dslopsv.n;i++){
+        string lop = dslopsv.nodes[i]->TENLOP + "_" + dslopsv.nodes[i]->MALOP+".txt";
+        ofstream fout(folder + "/" + lop,ios::app);
+        if(!fout) {cout << "Khong the mo file " << lop << "\n"; continue;}
+        PTRSV p = dslopsv.nodes[i]->FirstSV;
+        while (p){
+            SinhVien sv = p->sv;
+            fout << sv.MASV << "|" << sv.HO << "|" << sv.TEN << "|" << sv.PHAI << "|" << sv.SODT << "|" << sv.Email <<"\n";
+            p=p->next;
+        }
+        fout.close();
+    }
 }
 
 bool tim_sv_theo_maso_va_lop(const DS_LOPSV &dslopsv, string malop, const string maso){
@@ -165,7 +261,7 @@ void xoa_sv(DS_LOPSV& dslopsv){
         getline(cin,masv);
         if(masv.empty()) return;
     }
-
+    // sort san
     PTRSV p = lop->FirstSV;
     
     if(p->sv.MASV == masv){ //xóa node đầu
@@ -287,7 +383,7 @@ void in_ds_mh_tang_dan(const nodeMH* dsmh){
     back_track(dsmh,back_track);
 }
 
-nodeLopTinChi* tim_lop_tin_chi(nodeLopTinChi* ltc ,string nienkhoa, int hocky, int nhom, string monhoc){
+PTRLTC tim_lop_tin_chi(PTRLTC ltc ,string nienkhoa, int hocky, int nhom, string monhoc){
     while(ltc){
         if(ltc->ltc.NienKhoa == nienkhoa && ltc->ltc.Hocky == hocky && ltc->ltc.Nhom == nhom && ltc->ltc.MAMH == monhoc){
             if(ltc->ltc.huylop){ cout << "Lop tin chi da bi huy!\n"; return nullptr; }
@@ -314,14 +410,14 @@ SinhVien tim_sinh_vien_chi_voi_maso(const DS_LOPSV &dslopsv,const string masv){
     return sv;
 }
 
-void in_diem_sv(DS_LOPSV &dslopsv, nodeLopTinChi* ltc,string nienkhoa, int hocky, int nhom, string monhoc){
+void in_diem_sv(DS_LOPSV &dslopsv,PTRLTC ltc,string nienkhoa, int hocky, int nhom, string monhoc){
     if(!ltc){
         cout <<"Chua co lop tinh chi nao!\n";
         return;
     }
     ltc = tim_lop_tin_chi(ltc,nienkhoa,hocky,nhom,monhoc);
     if(!ltc) return;
-    PTRLTC dsdk = ltc->ltc.dssvdk;
+    PTRDK dsdk = ltc->ltc.dssvdk;
     int i = 0;
     while (dsdk)
     {
@@ -335,7 +431,7 @@ void in_diem_sv(DS_LOPSV &dslopsv, nodeLopTinChi* ltc,string nienkhoa, int hocky
     }
 }
 
-PTRDK tim_sinh_vien_theo_maso_voi_lop_tinh_chi(const nodeLopTinChi* ltc, const string maso){
+PTRDK tim_sinh_vien_theo_maso_voi_lop_tinh_chi(const PTRLTC ltc, const string maso){
     PTRDK dssv = ltc->ltc.dssvdk;
     long long maso_ll=stoll(maso);
     while(dssv&& stoll(dssv->dk.MASV) <= maso_ll){
@@ -345,7 +441,7 @@ PTRDK tim_sinh_vien_theo_maso_voi_lop_tinh_chi(const nodeLopTinChi* ltc, const s
     return nullptr;
 }
 
-void in_hieu_chinh_diem_sv(DS_LOPSV &dslopsv,nodeLopTinChi* ltc){
+void in_hieu_chinh_diem_sv(DS_LOPSV &dslopsv,PTRLTC ltc){
     if(!ltc){
         cout << "Danh sach lop tinh chi trong!";
         return;
@@ -360,7 +456,7 @@ void in_hieu_chinh_diem_sv(DS_LOPSV &dslopsv,nodeLopTinChi* ltc){
     string monhoc; cout <<"Nhap mon hoc can tim: "; getline(cin,monhoc);
     ltc = tim_lop_tin_chi(ltc,nienkhoa,hocky,nhom,monhoc);  
     if(!ltc) return;
-    PTRLTC dsdk = ltc->ltc.dssvdk;
+    PTRDK dsdk = ltc->ltc.dssvdk;
     in_diem_sv(dslopsv, ltc, nienkhoa, hocky, nhom, monhoc);
     while(true){
         cout << "Nhap ma so sinh vien muon hieu chinh diem (skip de xem bang): "; string masv; getline(cin,masv);
@@ -379,7 +475,7 @@ int main(){
     PTRLTC dsltc=NULL;
     treeMH dsmh=NULL;
     DS_LOPSV dslopsv;
-    nodeLopTinChi* ltc = nullptr;
+    PTRLTC ltc = nullptr;
     nhap_lop_va_sinhvien(dslopsv);
     xoa_sv(dslopsv);
     hieu_chinh_thong_tin_sinhvien(dslopsv);

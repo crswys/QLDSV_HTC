@@ -12,6 +12,7 @@
         "tuple": "cpp",
         "utility": "cpp",
         "variant": "cpp",
-        "string": "cpp"
+        "string": "cpp",
+        "iosfwd": "cpp"
     }
 }
